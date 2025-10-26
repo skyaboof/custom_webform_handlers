@@ -1,0 +1,6 @@
+services:
+  custom_webform_handlers.google_api_settings:
+    class: Drupal\custom_webform_handlers\Form\GoogleApiSettingsForm
+    arguments: ['@config.factory']
+    tags:
+      - { name: config.form }

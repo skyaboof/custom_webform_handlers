@@ -1,0 +1,12 @@
+custom_webform_handlers.admin:
+  title: 'Distance Records'
+  description: 'View and manage saved distance calculations.'
+  route_name: entity.distance_record.collection
+  parent: system.admin_content
+  weight: 100
+custom_webform_handlers.settings:
+  title: 'Distance Calculator Settings'
+  description: 'Configure Google Maps API key for the distance calculator.'
+  parent: system.admin_config_services
+  route_name: custom_webform_handlers.settings
+  weight: 100

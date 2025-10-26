@@ -1,0 +1,9 @@
+address_autocomplete:
+  version: 1.x
+  js:
+    js/address_autocomplete.js: {}
+    js/distance_calculator.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings

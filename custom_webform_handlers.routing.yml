@@ -1,0 +1,14 @@
+custom_webform_handlers.save:
+  path: '/custom_webform_handlers/save'
+  defaults:
+    _controller: '\Drupal\custom_webform_handlers\Controller\DistanceSaveController::save'
+  requirements:
+    _permission: 'access content'
+  methods: [POST]
+custom_webform_handlers.settings:
+  path: '/admin/config/custom_webform_handlers/settings'
+  defaults:
+    _form: '\Drupal\custom_webform_handlers\Form\DistanceCalculatorSettingsForm'
+    _title: 'Distance Calculator Settings'
+  requirements:
+    _permission: 'administer site configuration'
