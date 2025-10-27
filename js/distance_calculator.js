@@ -2,7 +2,7 @@
   Drupal.behaviors.distanceCalculator = {
     attach: function (context, settings) {
       const config = drupalSettings.custom_webform_handlers || {};
-      const apiKey = config.google_maps_api_key || 'AIzaSyC1zwxDNvmWXrn6Z5nh7bLYSRDJQlhvFvM'; // Fallback to hardcoded key
+      const apiKey = config.google_maps_api_key || ''; // Fallback to hardcoded key
       const saveUrl = config.saveUrl || '/custom_webform_handlers/save';
       const csrfToken = config.csrfToken || '';
 
