@@ -1,0 +1,801 @@
+page_1:
+  '#type': wizard_page
+  '#title': '1. Your Contact Information'
+  '#wizard_progress_bar': true  # Enable progress bar for UX
+  '#wizard_progress_percentage': true
+  contact_information:
+    '#type': fieldset
+    '#title': 'Your Contact Information'
+    full_name:
+      '#type': textfield
+      '#title': 'Full Name'
+      '#required': true
+      '#attributes':
+        aria-required: true
+    email:
+      '#type': email
+      '#title': 'Email Address'
+      '#description': 'We will send your quote and confirmation to this address.'
+      '#required': true
+      '#attributes':
+        aria-required: true
+    phone_number:
+      '#type': tel
+      '#title': 'Phone Number'
+      '#required': true
+      '#attributes':
+        aria-required: true
+    how_did_you_hear:
+      '#type': select
+      '#title': 'How did you hear about us?'
+      '#options':
+        '': '- Select One -'
+        google: 'Google Search'
+        social_media: 'Social Media'
+        referral: Referral
+        yelp: Yelp
+        other: Other
+      '#description': 'Helps us understand our customers better!'
+page_2:
+  '#type': wizard_page
+  '#title': '2. Select Your Service'
+  '#wizard_progress_bar': true
+  '#wizard_progress_percentage': true
+  service_type:
+    '#type': select
+    '#title': 'What type of service do you need?'
+    '#options':
+      '': '- Select a Service -'
+      local_residential_move: 'Local Residential Move'
+      local_commercial_move: 'Local Commercial/Office Move'
+      long_distance_move: 'Long-Distance Move'
+      specialty_item_move: 'Specialty Item Move (Standalone)'
+      diy_truck_rental: 'DIY Truck Rental'
+      on_demand_delivery: 'On-Demand / Small Delivery'
+    '#required': true
+    '#attributes':
+      aria-required: true
+  quick_estimate:
+    '#type': computed_twig
+    '#title': 'Quick Estimate (Basic, without details)'
+    '#template': |
+      {% set service = data.service_type %}
+      {% set quick_cost = 0 %}
+      {% set quick_details = [] %}
+
+      {% if service == 'long_distance_move' %}
+        {% set quick_cost = 2700 %}
+        {% set quick_details = quick_details|merge(["Basic long-distance estimate: starting at $2,700 (refine with details below)."]) %}
+
+      {% elseif service == 'local_residential_move' %}
+        {% set quick_cost = 500 %}
+        {% set quick_details = quick_details|merge(["Basic local residential estimate: starting at $500 (refine with size and access)."]) %}
+
+      {% elseif service == 'local_commercial_move' %}
+        {% set quick_cost = 1000 %}
+        {% set quick_details = quick_details|merge(["Basic commercial estimate: starting at $1,000 (refine with scope)."]) %}
+
+      {% elseif service == 'specialty_item_move' %}
+        {% set quick_cost = 150 %}
+        {% set quick_details = quick_details|merge(["Basic specialty item estimate: starting at $150 (refine with item type)."]) %}
+
+      {% elseif service == 'diy_truck_rental' %}
+        {% set quick_cost = 100 %}
+        {% set quick_details = quick_details|merge(["Basic DIY rental estimate: starting at $100/day (refine with size)."]) %}
+
+      {% elseif service == 'on_demand_delivery' %}
+        {% set quick_cost = 75 %}
+        {% set quick_details = quick_details|merge(["Basic on-demand estimate: starting at $75 (refine with needs)."]) %}
+
+      {% else %}
+        {% set quick_details = quick_details|merge(["Select a service for a quick estimate."]) %}
+      {% endif %}
+
+      {% for detail in quick_details %}
+        <p>{{ detail }}</p>
+      {% endfor %}
+
+      {% if quick_cost > 0 %}
+        <p><strong>Quick Estimated Cost: ${{ quick_cost|number_format(0, '.', ',') }}</strong></p>
+      {% endif %}
+    '#whitespace': spaceless
+    '#ajax': true
+    '#computed': true
+    '#computed_properties':
+      - value
+    '#prefix': '<div class="quick-estimate">'
+    '#suffix': '</div>'
+page_3:
+  '#type': wizard_page
+  '#title': '3. Move Details'
+  '#description': 'Based on your service selection, please provide the following details. If you change your service type above, these fields will update.'
+  '#wizard_progress_bar': true
+  '#wizard_progress_percentage': true
+  booking:
+    '#type': booking
+    '#title': 'Preferred Service Date & Time'
+    '#description': '<p>Please select an available date and time slot for your service.</p>'
+    '#required': true
+    '#start_date': '2025-08-01'
+    '#end_date': '2025-12-31'
+    '#excluded_weekdays':
+      Mon: 0
+      Tue: 0
+      Wed: 0
+      Thu: 0
+      Fri: 0
+      Sat: 0
+      Sun: 0
+    '#default_price': ''
+    '#booking_start_date': now
+    '#booking_end_date': '+12 months'
+    '#booking_slots_duration': 60
+    '#booking_available_slots': |
+      # Define your available time slots here.
+      # Format: 'weekday (0=Sunday to 6=Saturday) hour:minute-hour:minute'
+      # Example: '1 09:00-17:00' for Monday, 9 AM to 5 PM
+      1 09:00-12:00
+      1 13:00-17:00
+      2 09:00-12:00
+      2 13:00-17:00
+      3 09:00-12:00
+      3 13:00-17:00
+      4 09:00-12:00
+      4 13:00-17:00
+      5 09:00-12:00
+      5 13:00-17:00
+    '#booking_slot_max_capacity': 1
+    '#booking_excluded_dates': |
+      # List any dates to exclude here.
+      # Format: 'YYYY-MM-DD'
+      # Example: '2025-12-25'
+  date_flexibility:
+    '#type': radios
+    '#title': 'How flexible are you with your preferred move date?'
+    '#options':
+      not_flexible: 'Not flexible at all (date is fixed)'
+      plus_minus_few_days: 'Flexible +/- a few days'
+      very_flexible: 'Very flexible (within the month)'
+    '#description': 'Greater flexibility can sometimes lead to better availability or rates.'
+    '#required': true
+  universal_item_file:
+    '#type': file
+    '#title': 'Upload a Photo or Video of item(s) or conditions (optional)'
+    '#description': 'Help us provide a more accurate quote by uploading **photos or a short video** of items, challenging access points (like narrow hallways or stairs), or unique conditions. Max file size: 20MB. Accepted file types: JPG, PNG, GIF, MP4, MOV, WEBM.'
+    '#file_extensions': 'jpg png gif mp4 mov webm'
+    '#max_filesize': 20M
+    '#max_files': 5  # Increased for better UX
+    '#file_display': picture
+  address:
+    '#type': fieldset
+    '#title': Address
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          filled: true
+    '#collapsible': true  # Make collapsible for less overwhelm
+    '#collapsed': false
+    origin_address:
+      '#type': textfield
+      '#title': 'From'
+      '#description': 'Enter starting address (e.g., street, city, state, ZIP). Autocomplete available.'
+    destination_address:
+      '#type': textfield
+      '#title': 'To'
+      '#description': 'Enter destination address. Distance will auto-calculate for better quote accuracy.'
+    calculated_distance:
+      '#type': hidden
+      '#title': calculated_distance
+  local_residential_move_details:
+    '#type': fieldset
+    '#title': 'Local Residential Move Details'
+    '#description': '<strong>Pricing:</strong> Movers + Truck starts at <strong>$195/hour</strong>. Labor Only starts at <strong>$95/hour</strong>.'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: local_residential_move
+    '#collapsible': true
+    '#collapsed': false
+    move_size_residential:
+      '#type': select
+      '#title': 'Move Size'
+      '#options':
+        studio: 'Studio Apartment'
+        1_br: '1 Bedroom Home/Apt'
+        2_br: '2 Bedroom Home/Apt'
+        3_br: '3 Bedroom Home/Apt'
+        4_br_plus: '4+ Bedroom Home/Apt'
+        few_items: 'Just a few items'
+      '#required': true
+    origin_access_conditions:
+      '#type': select
+      '#title': 'Origin Access Conditions'
+      '#description': 'Access fees may apply (e.g., $25–$75 per stair flight). This helps us estimate accurately.'
+      '#options':
+        ground_floor: 'Ground floor / No stairs ($0)'
+        stairs: 'Stairs (Walk-up) ($10–$25 per flight or flat $50–$100)'
+        passenger_elevator: 'Passenger Elevator ($20–$50 flat fee)'
+        freight_elevator: 'Freight Elevator ($10–$30 or no surcharge)'
+    origin_stairs_flights:
+      '#type': number
+      '#title': 'Number of flights of stairs'
+      '#min': 1
+      '#states':
+        visible:
+          ':input[name="origin_access_conditions"]':
+            value: stairs
+    destination_access_conditions:
+      '#type': select
+      '#title': 'Destination Access Conditions'
+      '#description': 'Access fees may apply (e.g., $25–$75 per stair flight).'
+      '#options':
+        ground_floor: 'Ground floor / No stairs ($0)'
+        stairs: 'Stairs (Walk-up) ($10–$25 per flight or flat $50–$100)'
+        passenger_elevator: 'Passenger Elevator ($20–$50 flat fee)'
+        freight_elevator: 'Freight Elevator ($10–$30 or no surcharge)'
+    destination_stairs_flights:
+      '#type': number
+      '#title': 'Number of flights of stairs'
+      '#min': 1
+      '#states':
+        visible:
+          ':input[name="destination_access_conditions"]':
+            value: stairs
+    parking_situation:
+      '#type': select
+      '#title': 'Parking Situation at Both Locations'
+      '#description': 'Long-carry or shuttle fees ($50–$150) may apply if the truck must park far from the entrance.'
+      '#options':
+        close: 'Truck can park close to the entrance ($0)'
+        long_carry: 'Long carry required (> 50 feet) ($50–$100 flat fee)'
+        shuttle: 'Shuttle service may be needed ($150–$350 flat fee)'
+    specialty_items_residential:
+      '#type': radios
+      '#title': 'Do you have any specialty items to move?'
+      '#description': 'e.g., Piano, antiques, gun safe, heavy furniture > 300 lbs, artwork'
+      '#options':
+        'No': 'No'
+        'Yes': 'Yes'
+    specialty_items_residential_description:
+      '#type': textarea
+      '#title': 'Please list and describe your specialty items'
+      '#states':
+        visible:
+          ':input[name="specialty_items_residential"]':
+            value: 'Yes'
+  local_commercial_move_details:
+    '#type': fieldset
+    '#title': 'Local Commercial/Office Move Details'
+    '#description': '<strong>Pricing:</strong> Office moves typically start at <strong>$100+/hour per mover</strong> or a flat project fee.'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: local_commercial_move
+    '#collapsible': true
+    '#collapsed': false
+    scope_of_move:
+      '#type': textarea
+      '#title': 'Scope of Move'
+      '#description': 'Please describe the move (e.g., number of offices/workstations, heavy items like copiers, etc.)'
+      '#required': true
+    building_requirements:
+      '#type': checkboxes
+      '#title': 'Building Requirements'
+      '#options':
+        coi: 'Certificate of Insurance (COI) required'
+        loading_dock: 'Loading dock access required'
+        elevator_rules: 'Specific elevator hours/rules'
+    timing_of_move:
+      '#type': radios
+      '#title': 'Timing of Move'
+      '#options':
+        business_hours: 'During business hours (weekday)'
+        after_hours: 'After-hours (evening/overnight)'
+        weekend: 'Weekend (Saturday/Sunday)'
+    additional_services_commercial:
+      '#type': checkboxes
+      '#title': 'Additional Services Needed'
+      '#options':
+        packing_unpacking: 'Full packing/unpacking ($150–$500+ flat or $65–$90/hour)'
+        it_services: 'IT services (computer/server disconnect & reconnect) ($100–$300 flat)'
+        furniture_assembly: 'Modular furniture disassembly/reassembly ($75–$250 flat or $50–$85/hour)'
+  long_distance_move_details:
+    '#type': fieldset
+    '#title': 'Long-Distance Move Details'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: long_distance_move
+    '#collapsible': true
+    '#collapsed': false
+    pricing_info_long_distance:
+      '#type': help
+      '#helptext': '<strong>Pricing Note:</strong> The rate of <strong>$100/hour</strong> typically applies to labor for loading/unloading. The total move cost is based on <strong>shipment weight and travel distance</strong>. For example, a 1,000-mile move often costs $2,700–$7,900.'
+    shipment_weight:
+      '#type': number
+      '#title': 'Estimated shipment weight (kg)'
+      '#min': 0
+      '#step': 1
+      '#description': 'Enter approximate shipment weight. Used for tiered pricing (optional for initial estimate).'
+      '#required': false  # Made optional
+    shipment_size:
+      '#type': radios
+      '#title': 'Estimated Shipment Size'
+      '#options':
+        home_size: 'Select home size'
+        inventory_list: 'Provide a detailed inventory list'
+      '#required': true
+    shipment_home_size:
+      '#type': select
+      '#title': 'Home Size'
+      '#options':
+        studio: Studio
+        1_br: '1 Bedroom'
+        2_br: '2 Bedrooms'
+        3_br: '3 Bedrooms'
+        4_br_plus: '4+ Bedrooms'
+      '#states':
+        visible:
+          ':input[name="shipment_size"]':
+            value: home_size
+      '#required': true
+    inventory_list_detail_markup:
+      '#type': markup
+      '#markup': |
+        <p>Please provide a detailed inventory. You can list items by room or category.</p>
+        <p>Example:</p>
+        <ul>
+          <li><strong>Living Room:</strong> 1 Sofa, 2 Armchairs, 1 Coffee Table, 5 Boxes (books)</li>
+          <li><strong>Bedroom 1:</strong> 1 Queen Bed, 2 Nightstands, 1 Dresser, 10 Boxes (clothes)</li>
+        </ul>
+      '#states':
+        visible:
+          ':input[name="shipment_size"]':
+            value: inventory_list
+    inventory_list_textarea:
+      '#type': textarea
+      '#title': 'Your Detailed Inventory'
+      '#description': 'Please be as specific as possible to help us provide an accurate quote (optional but recommended).'
+      '#states':
+        visible:
+          ':input[name="shipment_size"]':
+            value: inventory_list
+      '#required': false  # Made optional
+    specialty_items_long_distance:
+      '#type': textarea
+      '#title': 'Specialty Items to Move?'
+      '#description': 'Please list any specialty items like a piano, fine art, or vehicle (optional).'
+      '#required': false
+  specialty_item_move_details:
+    '#type': fieldset
+    '#title': 'Specialty Item Move Details'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: specialty_item_move
+    '#collapsible': true
+    '#collapsed': false
+    pricing_info_specialty:
+      '#type': help
+      '#helptext': '<strong>Piano Moves:</strong> Starting at <strong>$250</strong>. <br><strong>Other Single Items:</strong> Starting at <strong>$50/hour</strong> (2-hour minimum).'
+    item_to_be_moved:
+      '#type': select
+      '#title': 'Item to be Moved'
+      '#options':
+        piano: 'Upright or grand piano ($250–$600 flat fee)'
+        gun_safe: 'Gun Safe (Heavy, secure item often >300 lbs) ($150–$400)'
+        fine_art: 'Fine Art / Sculpture (Fragile, crated, often insured) ($200–$500+)'
+        gym_equipment: 'Heavy Gym Equipment (Treadmills, racks, ellipticals) ($100–$350 per item)'
+        other: 'Other Single Item (Large single items) ($50–$150 flat fee)'
+      '#required': true
+    item_specifications:
+      '#type': textarea
+      '#title': 'Item Specifications'
+      '#description': 'Please provide details like type (e.g., Upright Piano vs. Grand Piano), estimated weight, and dimensions.'
+      '#required': true
+    access_obstacles:
+      '#type': textarea
+      '#title': 'Access & Obstacles'
+      '#description': 'Please describe any narrow staircases, tight corners, or multi-story challenges at either location.'
+      '#required': true
+  diy_truck_rental_details:
+    '#type': fieldset
+    '#title': 'DIY Truck Rental Details'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: diy_truck_rental
+    '#collapsible': true
+    '#collapsed': false
+    truck_size:
+      '#type': select
+      '#title': 'Truck Size Needed'
+      '#options':
+        10_ft: "10' Truck (Studio/1BR)"
+        15_ft: "15' Truck (1-2 BR)"
+        20_ft: "20' Truck (2-3 BR)"
+        26_ft: "26' Truck (4+ BR)"
+      '#required': false
+    rental_duration:
+      '#type': number
+      '#title': 'Number of days needed'
+      '#min': 1
+      '#required': false
+    estimated_mileage:
+      '#type': number
+      '#title': 'Estimated total mileage'
+      '#required': false
+    diy_addons:
+      '#type': checkboxes
+      '#title': 'Additional Needs'
+      '#options':
+        insurance: 'Insurance / Damage Waiver'
+        dolly: 'Appliance/Utility Dolly'
+        pads: 'Furniture Pads'
+        labor_help: 'Labor Only Help (for loading/unloading)'
+    labor_help_description:
+      '#type': help
+      '#helptext': 'If you select "Labor Only Help", a separate quote will be provided starting at <strong>$95/hour</strong>.'
+      '#states':
+        visible:
+          ':input[name="diy_addons[labor_help]"]':
+            checked: true
+  on_demand_delivery_details:
+    '#type': fieldset
+    '#title': 'On-Demand / Small Delivery Details'
+    '#states':
+      visible:
+        ':input[name="service_type"]':
+          value: on_demand_delivery
+    '#collapsible': true
+    '#collapsed': false
+    items_to_move_sameday:
+      '#type': textarea
+      '#title': 'What are you moving?'
+      '#description': 'e.g., Package, 3 boxes, single sofa, etc.'
+      '#required': true
+    service_speed:
+      '#type': radios
+      '#title': 'Service Speed'
+      '#options':
+        standard: 'Standard (same-day) (+$0)'
+        rush: 'Rush (within 2–4 hours) (+$50–$100)'
+        expedited: 'Expedited (within 1 hour) (+$100–$200)'
+      '#default_value': standard
+    vehicle_helper_needs:
+      '#type': select
+      '#title': 'Vehicle & Helper Needs'
+      '#options':
+        van_1_helper: 'Van with 1 helper ($75–$125/ hr or $150–$250 flat)'
+        truck_1_helper: 'Truck with 1 helper ($100–$165/ hr or $250–$350 flat)'
+        truck_2_helpers: 'Truck with 2 helpers ($135–$195/ hr or $350–$600 flat)'
+page_4:
+  '#type': wizard_page
+  '#title': '4. Optional Add-ons & Final Details'
+  '#wizard_progress_bar': true
+  '#wizard_progress_percentage': true
+  quote_disclaimer:
+    '#type': markup
+    '#markup': |
+      <h3>Important Information Regarding Your Quote</h3>
+      <p>Please note that the information provided through this form helps us generate a **preliminary estimate** for your service. A final, binding quote will be provided after a detailed review of your needs by one of our moving specialists. They will contact you shortly to confirm all details.</p>
+      <p>Factors like unexpected access challenges, additional items, or last-minute changes can affect the final cost.</p>
+      <p>No obligation – get your free quote today!</p>
+  additional_services_fieldset:
+    '#type': fieldset
+    '#title': 'Optional Add-on Services'
+    '#description': 'You can add these services to any move type.'
+    '#collapsible': true
+    '#collapsed': false
+    packing_services:
+      '#type': checkbox
+      '#title': 'Add Professional Packing Services'
+      '#description': '<strong>$150–$500+ flat, or $65–$90/ hr (2–4 hr min)</strong>. Cost of materials is separate.'
+    cleaning_services:
+      '#type': checkbox
+      '#title': 'Add Move-In / Move-Out Cleaning'
+      '#description': 'Starts at <strong>$120–$300 flat depending on size of space</strong>.'
+    disposal_donation_interest:
+      '#type': checkbox
+      '#title': 'Interested in disposal or donation services for unwanted items?'
+      '#description': 'We can help arrange removal or donation of items you no longer need. Additional charges may apply.'
+  items_for_disposal_donation:
+    '#type': textarea
+    '#title': 'Please list items for disposal/donation'
+    '#description': 'e.g., Old sofa, broken TV, bags of clothes for charity (optional).'
+    '#states':
+      visible:
+        ':input[name="disposal_donation_interest"]':
+          checked: true
+    '#required': false
+  virtual_walkthrough_option:
+    '#type': radios
+    '#title': 'Would you like to schedule a free virtual walkthrough/video call?'
+    '#description': 'A virtual walkthrough can help us provide a more accurate quote for complex moves.'
+    '#options':
+      'No': "No, I'm okay with the initial quote."
+      'Yes': "Yes, I'd like to schedule a virtual walkthrough."
+  virtual_walkthrough_details:
+    '#type': fieldset
+    '#title': 'Virtual Walkthrough Details'
+    '#states':
+      visible:
+        ':input[name="virtual_walkthrough_option"]':
+          value: 'Yes'
+    preferred_video_platform:
+      '#type': checkboxes
+      '#title': 'Preferred Video Call Platform(s)'
+      '#options':
+        zoom: Zoom
+        google_meet: 'Google Meet'
+        facetime: 'FaceTime (iOS only)'
+        other_platform: 'Other (please specify below)'
+    other_platform_specify:
+      '#type': textfield
+      '#title': 'Please specify other platform'
+      '#states':
+        visible:
+          ':input[name="preferred_video_platform[other_platform]"]':
+            checked: true
+    virtual_walkthrough_availability:
+      '#type': textarea
+      '#title': 'Your Availability for Virtual Walkthrough'
+      '#description': 'Please suggest a few dates and times that work for you (e.g., Mon, Jul 29, 2025 afternoon; Wed, Jul 31, 2025 any time).'
+      '#required': true
+  insurance_options_fieldset:
+    '#type': fieldset
+    '#title': 'Understanding Your Moving Protection'
+    '#description': 'All licensed movers are required to provide **Basic Liability Coverage** at no additional cost. This covers items at $0.60 per pound per article. For enhanced protection, you may opt for additional coverage.'
+    '#collapsible': true
+    '#collapsed': false
+  insurance_interest:
+    '#type': radios
+    '#title': 'Are you interested in additional moving protection?'
+    '#options':
+      basic_liability: 'No, Basic Liability Coverage is sufficient.'
+      full_value_protection: "Yes, I'm interested in Full Value Protection."
+      learn_more: "Yes, I'd like to learn more about my options."
+  insurance_questions:
+    '#type': textarea
+    '#title': 'Any specific questions about insurance?'
+    '#states':
+      visible:
+        ':input[name="insurance_interest"]':
+          value: learn_more
+    '#required': false
+  moving_tips:
+    '#type': markup
+    '#markup': |
+      <details>
+        <summary>Moving Tips & Resources</summary>
+        <ul>
+          <li>Get at least 3 quotes from different movers to compare prices and services.</li>
+          <li>Verify the mover's license and insurance via the FMCSA website (<a href="https://www.fmcsa.dot.gov/">fmcsa.dot.gov</a>).</li>
+          <li>Provide a detailed inventory to avoid hidden fees—use photos or videos for accuracy.</li>
+          <li>Watch for red flags like large upfront deposits or no in-person estimates.</li>
+          <li>Plan ahead: Book early, especially for peak seasons, and read contracts carefully.</li>
+          <li>To avoid spam, consider using a secondary email for quotes.</li>
+        </ul>
+      </details>
+    '#collapsible': true
+    '#collapsed': true
+  data_consent:
+    '#type': checkbox
+    '#title': 'I consent to the use of my data for providing a quote and related communications, in accordance with the <a href="/privacy-policy">Privacy Policy</a>.'
+    '#required': true
+    '#description': 'Your data is protected and used only for this purpose (GDPR/CCPA compliant).'
+  final_calculated_quote:
+    '#type': hidden
+    '#title': 'Estimated Quote'
+    '#value': ''
+  estimated_cost:
+    '#type': computed_twig
+    '#title': 'Estimated Cost'
+    '#template': |
+      {# Define all literal strings as variables at the top to avoid token validation errors, using double quotes #}
+      {% set long_distance_str = "Long-distance estimate: $" ~ move_cost ~ " (based on " ~ weight_lbs ~ " lbs over " ~ dist_mi ~ " miles at ~$0.65/lb adjusted)." %}
+      {% set origin_stairs_str = "Origin stairs fee: +$" ~ ((data.origin_stairs_flights | default(0)) + 0 * 50) %}
+      {% set local_estimate_str = "Local estimate: $" ~ total_estimated_cost|number_format(0, '.', ',') ~ " (includes $" ~ travel_fee ~ " travel over " ~ dist_mi ~ " mi)." %}
+      {% set local_no_size_str = "Please select a move size for estimate. Local avg: $1,489 (2025 data)." %}
+      {% set commercial_estimate_str = "Commercial estimate: $" ~ total_estimated_cost|number_format(0, '.', ',') ~ " (includes $" ~ travel_fee ~ " for distance)." %}
+      {% set piano_str = "Piano move: ~$425 (2025 avg)." %}
+      {% set gun_safe_str = "Gun safe move: ~$275." %}
+      {% set fine_art_str = "Fine art move: ~$350." %}
+      {% set gym_equipment_str = "Gym equipment move: ~$225." %}
+      {% set other_item_str = "Other item move: ~$100." %}
+      {% set select_item_str = "Select item for estimate." %}
+      {% set on_demand_base_str = "On-demand base: $" ~ base_cost|number_format(0, '.', ',') ~ "." %}
+      {% set speed_fee_str = "Speed fee: +$" ~ delivery_speed_cost|number_format(0, '.', ',') ~ "." %}
+      {% set distance_fee_str = "Distance fee: +$" ~ distance_fee|number_format(0, '.', ',') ~ " over 10 mi." %}
+      {% set on_demand_total_str = "Total on-demand: ~$" ~ total_estimated_cost|number_format(0, '.', ',') ~ "." %}
+      {% set on_demand_no_options_str = "Select options for estimate. 2025 avg parcel up 8-12%." %}
+      {% set custom_quote_str = "Contact for custom quote." %}
+      {% set packing_str = "Packing: +$325 (avg)." %}
+      {% set cleaning_str = "Cleaning: +$210 (avg)." %}
+
+      {% set service = data.service_type %}
+      {% set total_estimated_cost = 0 %}
+      {% set cost_details = [] %}
+
+      {# Parse distance (assume '123.45 mi') #}
+      {% set dist_str = data.calculated_distance | default('0 mi') %}
+      {% set dist_mi = (dist_str | replace({' mi': ''}) | default(0)) + 0 %}
+
+      {# Weight mapping (lbs) based on home size if no shipment_weight #}
+      {% set weight_map = {
+        'studio': 2500,
+        '1_br': 4000,
+        '2_br': 6000,
+        '3_br': 8500,
+        '4_br_plus': 12000
+      } %}
+      {# Convert shipment_weight kg to lbs if provided #}
+      {% set weight_lbs = ((data.shipment_weight | default(0)) + 0 * 2.20462) | default(weight_map[data.shipment_home_size] | default(0)) %}
+
+      {% if service == 'long_distance_move' %}
+        {# Optimized formula: base + (weight_lbs * dist_mi * rate_factor) - 2025 avg rate 0.65/lb/mi #}
+        {% set rate_factor = 0.00065 %} {# Adjusted to per-mile per-lb equivalent #}
+        {% set base_fee = 500 %}
+        {% set move_cost = base_fee + (weight_lbs * dist_mi * rate_factor) | round %}
+        {% set total_estimated_cost = move_cost %}
+        {% set cost_details = cost_details|merge([long_distance_str]) %}
+        {# Add access, etc., if applicable #}
+        {% if data.origin_access_conditions == 'stairs' and data.origin_stairs_flights is defined %}
+          {% set total_estimated_cost = total_estimated_cost + ((data.origin_stairs_flights | default(0)) + 0 * 50) %}
+          {% set cost_details = cost_details|merge([origin_stairs_str]) %}
+        {% endif %}
+        {# Similar for destination, parking #}
+
+      {% elseif service == 'local_residential_move' %}
+        {# Base costs from 2025 data #}
+        {% if data.move_size_residential == 'studio' %}
+          {% set base_cost = 415 %}
+        {% elseif data.move_size_residential == '1_br' %}
+          {% set base_cost = 569 %}
+        {% elseif data.move_size_residential == '2_br' %}
+          {% set base_cost = 909 %}
+        {% elseif data.move_size_residential == '3_br' or data.move_size_residential == '4_br_plus' %}
+          {% set base_cost = 2073 %}
+        {% else %}
+          {% set base_cost = 0 %}
+        {% endif %}
+
+        {# Access fees #}
+        {% if data.origin_access_conditions == 'stairs' and data.origin_stairs_flights is defined %}
+          {% set total_estimated_cost = total_estimated_cost + ((data.origin_stairs_flights | default(0)) + 0 * 17.5) %}
+        {% elseif data.origin_access_conditions == 'passenger_elevator' %}
+          {% set total_estimated_cost = total_estimated_cost + 35 %}
+        {% elseif data.origin_access_conditions == 'freight_elevator' %}
+          {% set total_estimated_cost = total_estimated_cost + 20 %}
+        {% endif %}
+
+        {# Similar for destination #}
+        {% if data.destination_access_conditions == 'stairs' and data.destination_stairs_flights is defined %}
+          {% set total_estimated_cost = total_estimated_cost + ((data.destination_stairs_flights | default(0)) + 0 * 17.5) %}
+        {% elseif data.destination_access_conditions == 'passenger_elevator' %}
+          {% set total_estimated_cost = total_estimated_cost + 35 %}
+        {% elseif data.destination_access_conditions == 'freight_elevator' %}
+          {% set total_estimated_cost = total_estimated_cost + 20 %}
+        {% endif %}
+
+        {% if data.parking_situation == 'long_carry' %}
+          {% set total_estimated_cost = total_estimated_cost + 75 %}
+        {% elseif data.parking_situation == 'shuttle' %}
+          {% set total_estimated_cost = total_estimated_cost + 250 %}
+        {% endif %}
+
+        {# Add travel adjustment: assume $110/hr rate, 30 mph speed, round-trip #}
+        {% set travel_hours = ((dist_mi / 30) * 2) | round(1, 'ceil') %}
+        {% set travel_fee = travel_hours * 110 %}
+        {% set total_estimated_cost = base_cost + travel_fee + total_estimated_cost %}
+        {% if base_cost > 0 %}
+          {% set cost_details = cost_details|merge([local_estimate_str]) %}
+        {% else %}
+          {% set cost_details = cost_details|merge([local_no_size_str]) %}
+        {% endif %}
+
+      {% elseif service == 'local_commercial_move' %}
+        {% set base_cost = 3000 %} {# Avg from 2025 data: $1k-5k, use mid #}
+        {% if data.additional_services_commercial is defined %}
+          {% if 'packing_unpacking' in data.additional_services_commercial %}
+            {% set base_cost = base_cost + 325 %}
+          {% endif %}
+          {% if 'it_services' in data.additional_services_commercial %}
+            {% set base_cost = base_cost + 200 %}
+          {% endif %}
+          {% if 'furniture_assembly' in data.additional_services_commercial %}
+            {% set base_cost = base_cost + 150 %}
+          {% endif %}
+        {% endif %}
+        {# Add distance factor if long #}
+        {% set travel_fee = (dist_mi > 50 ? (dist_mi - 50) * 2 : 0) %} {# $2/mi over 50 mi #}
+        {% set total_estimated_cost = base_cost + travel_fee %}
+        {% set cost_details = cost_details|merge([commercial_estimate_str]) %}
+
+      {% elseif service == 'specialty_item_move' %}
+        {% if data.item_to_be_moved == 'piano' %}
+          {% set total_estimated_cost = 425 %}
+          {% set cost_details = cost_details|merge([piano_str]) %}
+        {% elseif data.item_to_be_moved == 'gun_safe' %}
+          {% set total_estimated_cost = 275 %}
+          {% set cost_details = cost_details|merge([gun_safe_str]) %}
+        {% elseif data.item_to_be_moved == 'fine_art' %}
+          {% set total_estimated_cost = 350 %}
+          {% set cost_details = cost_details|merge([fine_art_str]) %}
+        {% elseif data.item_to_be_moved == 'gym_equipment' %}
+          {% set total_estimated_cost = 225 %}
+          {% set cost_details = cost_details|merge([gym_equipment_str]) %}
+        {% elseif data.item_to_be_moved == 'other' %}
+          {% set total_estimated_cost = 100 %}
+          {% set cost_details = cost_details|merge([other_item_str]) %}
+        {% else %}
+          {% set cost_details = cost_details|merge([select_item_str]) %}
+        {% endif %}
+
+      {% elseif service == 'on_demand_delivery' %}
+        {% set base_cost = 0 %}
+        {% if data.vehicle_helper_needs == 'van_1_helper' %}
+          {% set base_cost = 200 %}
+        {% elseif data.vehicle_helper_needs == 'truck_1_helper' %}
+          {% set base_cost = 300 %}
+        {% elseif data.vehicle_helper_needs == 'truck_2_helpers' %}
+          {% set base_cost = 475 %}
+        {% endif %}
+
+        {% set delivery_speed_cost = 0 %}
+        {% if data.service_speed == 'rush' %}
+          {% set delivery_speed_cost = 75 %}
+        {% elseif data.service_speed == 'expedited' %}
+          {% set delivery_speed_cost = 150 %}
+        {% endif %}
+
+        {# Distance scaling: +$1/mi over 10 mi (2025 est.) #}
+        {% set distance_fee = (dist_mi > 10 ? (dist_mi - 10) * 1 : 0) %}
+        {% set total_estimated_cost = base_cost + delivery_speed_cost + distance_fee %}
+
+        {% if total_estimated_cost > 0 %}
+          {% set cost_details = cost_details|merge([on_demand_base_str]) %}
+          {% if delivery_speed_cost > 0 %}
+            {% set cost_details = cost_details|merge([speed_fee_str]) %}
+          {% endif %}
+          {% if distance_fee > 0 %}
+            {% set cost_details = cost_details|merge([distance_fee_str]) %}
+          {% endif %}
+          {% set cost_details = cost_details|merge([on_demand_total_str]) %}
+        {% else %}
+          {% set cost_details = cost_details|merge([on_demand_no_options_str]) %}
+        {% endif %}
+
+      {% else %}
+        {% set cost_details = cost_details|merge([custom_quote_str]) %}
+      {% endif %}
+
+      {# Add-ons #}
+      {% if data.packing_services %}
+        {% set total_estimated_cost = total_estimated_cost + 325 %}
+        {% set cost_details = cost_details|merge([packing_str]) %}
+      {% endif %}
+
+      {% if data.cleaning_services %}
+        {% set total_estimated_cost = total_estimated_cost + 210 %}
+        {% set cost_details = cost_details|merge([cleaning_str]) %}
+      {% endif %}
+
+      {# Output #}
+      {% for detail in cost_details %}
+        <p>{{ detail }}</p>
+      {% endfor %}
+
+      {% if total_estimated_cost > 0 %}
+        <p><strong>Total Estimated Cost: ${{ total_estimated_cost|number_format(0, '.', ',') }}</strong></p>
+      {% endif %}
+    '#whitespace': spaceless
+    '#ajax': true
+    '#computed': true
+    '#computed_properties':
+      - value
+    '#prefix': '<div class="estimated-total">'
+    '#suffix': '</div>'
+  disclaimer:
+    '#type': markup
+    '#markup': '<p class="disclaimer">This is an estimated price based on the information provided. The final cost may vary depending on additional factors such as accessibility, special handling requirements, and the number of movers needed. It is recommended to get an in-person or digital estimate for a more accurate quote. Always ask about potential additional charges like fuel surcharges or stair fees. Secure form – your data is protected. <a href="/privacy">Privacy Policy</a>.</p>'
