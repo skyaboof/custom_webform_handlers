@@ -1,0 +1,12 @@
+* [33m60b7a60[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Refactor Distance Calculator and Update Configuration
+* [33m585270b[m Update custom_webform_handlers.info.yml with new module details
+* [33m83e60b7[m Update custom_webform_handlers.info.yml with new module information
+* [33m38170f5[m Add custom_webform_handlers.libraries.yml with Google Maps integration
+* [33m767c437[m Add Google Maps Integration Script
+* [33m6ab6c52[m Add MovingPriceService.php with moving price calculations service
+* [33m24da3d2[m Add MovingQuoteHandler.php
+* [33m12bbac1[m Add files via upload
+* [33m87a61c4[m Remove hardcoded Google Maps API key
+* [33m5423d7e[m Implement Distance Calculation and Quote Preview Features
+* [33mc52fa53[m Change fallback API key to empty string
+* [33mc4cb969[m Implement Custom Webform Handlers for Address Validation and Distance Calculation
