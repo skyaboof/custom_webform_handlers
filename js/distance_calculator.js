@@ -4,7 +4,7 @@
   Drupal.behaviors.distanceCalculator = {
     attach: function (context, settings) {
       const config = drupalSettings.custom_webform_handlers || {};
-      const apiKey = config.google_maps_api_key || 'AIzaSyC1zwxDNvmWXrn6Z5nh7bLYSRDJQlhvFvM';
+      const apiKey = config.google_maps_api_key || '';
       const saveUrl = config.saveUrl || '';
       const csrfToken = config.csrfToken || '';
       const fieldNames = config.field_names || {};
