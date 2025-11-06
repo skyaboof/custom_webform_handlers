@@ -1,9 +1,8 @@
-distance_calculator:
+google-maps:
   version: 1.x
   js:
-    js/distance_calculator.js: {}
+    js/google-maps-integration.js: {}
   dependencies:
     - core/jquery
     - core/drupal
     - core/drupalSettings
-    - core/once
