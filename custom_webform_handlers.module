@@ -2,6 +2,7 @@
 
 /**
  * @file
+<<<<<<< HEAD
  * Custom Webform Handlers module.
  */
 
@@ -84,5 +85,17 @@ function custom_webform_handlers_webform_submission_presave($submission) {
         '@message' => $e->getMessage()
       ]);
     }
+=======
+ * Main module file for Custom Webform Handlers.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function custom_webform_handlers_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.custom_webform_handlers':
+      return '<p>' . t('Provides custom webform handlers for address validation and distance calculation.') . '</p>';
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
   }
 }

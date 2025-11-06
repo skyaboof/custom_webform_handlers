@@ -133,15 +133,24 @@ class AddressDistanceHandler extends WebformHandlerBase {
     $destination = $submission->getElementData($this->configuration['destination_address_field']);
 
     if ($origin && $destination) {
+<<<<<<< HEAD
       $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' . urlencode($origin) . '&destinations=' . urlencode($destination) . '&key=' . urlencode($api_key);
+=======
+      $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' . urlencode($origin) . '&destinations=' . urlencode($destination) . '&units=imperial&key=' . urlencode($api_key);
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
 
       try {
         $response = \Drupal::httpClient()->get($url);
         $data = json_decode((string) $response->getBody(), TRUE);
 
         if ($data['status'] === 'OK' && isset($data['rows'][0]['elements'][0]['distance']['value'])) {
+<<<<<<< HEAD
           $distance_km = $data['rows'][0]['elements'][0]['distance']['value'] / 1000;
           $submission->setElementData($this->configuration['distance_field'], round($distance_km, 2) . ' km');
+=======
+          $distance_mi = $data['rows'][0]['elements'][0]['distance']['value'] / 1609.34; // Meters to miles
+          $submission->setElementData($this->configuration['distance_field'], round($distance_mi, 2) . ' mi');
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
         }
       }
       catch (\Exception $e) {

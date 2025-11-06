@@ -32,6 +32,12 @@
       fromInput.setAttribute('autocomplete', 'on');
       toInput.setAttribute('autocomplete', 'on');
 
+<<<<<<< HEAD
+=======
+      let lastFrom = '';
+      let lastTo = '';
+
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
       function initAutocompleteAndService() {
         const fromAutocomplete = new google.maps.places.Autocomplete(fromInput, {types: ['address']});
         const toAutocomplete = new google.maps.places.Autocomplete(toInput, {types: ['address']});
@@ -40,12 +46,22 @@
         function calculateDistance() {
           const fromValue = fromInput.value.trim();
           const toValue = toInput.value.trim();
+<<<<<<< HEAD
           if (fromValue && toValue) {
+=======
+          if (fromValue && toValue && (fromValue !== lastFrom || toValue !== lastTo)) {
+            lastFrom = fromValue;
+            lastTo = toValue;
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
             service.getDistanceMatrix({
               origins: [fromValue],
               destinations: [toValue],
               travelMode: 'DRIVING',
+<<<<<<< HEAD
               unitSystem: google.maps.UnitSystem.METRIC,
+=======
+              unitSystem: google.maps.UnitSystem.IMPERIAL, // Optimized for USA (miles)
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
             }, (response, status) => {
               if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
                 const distanceText = response.rows[0].elements[0].distance.text;
@@ -54,6 +70,10 @@
               } else {
                 console.warn('Distance calculation failed:', status, response);
                 distanceField.value = '';
+<<<<<<< HEAD
+=======
+                alert('Unable to calculate distance. Please check addresses.');
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
               }
             });
           }

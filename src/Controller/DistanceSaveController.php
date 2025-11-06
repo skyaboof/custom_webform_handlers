@@ -69,6 +69,24 @@ class DistanceSaveController {
       }
 
       $record_storage = $this->entityTypeManager->getStorage('distance_record');
+
+      // Check for existing record (optimization: cache/reuse distances)
+      $query = $record_storage->getQuery()
+        ->condition('from_address', $from)
+        ->condition('to_address', $to)
+        ->range(0, 1);
+      $ids = $query->execute();
+      if (!empty($ids)) {
+        $record = $record_storage->load(reset($ids));
+        return new JsonResponse([
+          'status' => 'success',
+          'message' => 'Record already exists.',
+          'id' => $record->id(),
+          'data' => ['from' => $from, 'to' => $to, 'distance' => $record->get('distance')->value],
+        ]);
+      }
+
+      // Create new if not found
       $record = $record_storage->create([
         'from_address' => $from,
         'to_address' => $to,
@@ -80,6 +98,7 @@ class DistanceSaveController {
         'status' => 'success',
         'message' => 'Record saved successfully.',
         'id' => $record->id(),
+        'data' => ['from' => $from, 'to' => $to, 'distance' => $distance],
       ]);
     }
     catch (AccessDeniedHttpException $e) {

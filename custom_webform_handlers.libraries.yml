@@ -1,8 +1,19 @@
+<<<<<<< HEAD
 google-maps:
   version: 1.x
   js:
     js/google-maps-integration.js: {}
+=======
+distance_calculator:
+  version: 1.x
+  js:
+    js/distance_calculator.js: {}
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)
   dependencies:
     - core/jquery
     - core/drupal
     - core/drupalSettings
+<<<<<<< HEAD
+=======
+    - core/once
+>>>>>>> 4f21d7e (Refactor Distance Calculator and Update Configuration)

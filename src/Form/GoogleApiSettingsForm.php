@@ -35,7 +35,7 @@ class GoogleApiSettingsForm extends ConfigFormBase {
       '#title' => $this->t('Google Maps API Key'),
       '#default_value' => $config->get('google_maps_api_key'),
       '#required' => TRUE,
-      '#description' => $this->t('Enter your Google Maps API key for Places Autocomplete and Distance Matrix APIs. Obtain it from <a href="https://developers.google.com/maps">Google Cloud Console</a>.'),
+      '#description' => $this->t('Enter your Google Maps API key for Places Autocomplete and Distance Matrix APIs. Obtain it from <a href="https://developers.google.com/maps">Google Cloud Console</a>. Restrict to your domain for security.'),
     ];
 
     return parent::buildForm($form, $form_state);
