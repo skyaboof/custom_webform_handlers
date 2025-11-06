@@ -1,7 +1,8 @@
-name: Custom Webform Handlers
+name: 'Custom Webform Handlers'
 type: module
-description: Provides custom webform handlers for address validation and distance calculation.
-core_version_requirement: ^10
+description: 'Provides custom webform handlers for moving quote calculations'
 package: Custom
+core_version_requirement: ^10
 dependencies:
-  - drupal:webform
+  - webform:webform
+version: '1.0.0'
