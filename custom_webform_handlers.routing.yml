@@ -1,14 +1,13 @@
-custom_webform_handlers.save:
+custom_webform_handlers.google_api_settings:
+  path: '/admin/config/services/custom-webform-handlers'
+  defaults:
+    _form: '\Drupal\custom_webform_handlers\Form\GoogleApiSettingsForm'
+    _title: 'Google API Settings'
+  requirements:
+    _permission: 'administer site configuration'
+custom_webform_handlers.save_distance:
   path: '/custom_webform_handlers/save'
   defaults:
     _controller: '\Drupal\custom_webform_handlers\Controller\DistanceSaveController::save'
   requirements:
-    _permission: 'access content'
-  methods: [POST]
-custom_webform_handlers.settings:
-  path: '/admin/config/custom_webform_handlers/settings'
-  defaults:
-    _form: '\Drupal\custom_webform_handlers\Form\DistanceCalculatorSettingsForm'
-    _title: 'Distance Calculator Settings'
-  requirements:
-    _permission: 'administer site configuration'
+    _csrf_request_header_token: 'TRUE'

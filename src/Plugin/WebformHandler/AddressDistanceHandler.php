@@ -3,6 +3,7 @@
 namespace Drupal\custom_webform_handlers\Plugin\WebformHandler;
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -21,6 +22,9 @@ use Drupal\webform\WebformSubmissionInterface;
  */
 class AddressDistanceHandler extends WebformHandlerBase {
 
+  /**
+   * {@inheritdoc}
+   */
   public function defaultConfiguration() {
     return [
       'origin_address_field' => '',
@@ -29,114 +33,121 @@ class AddressDistanceHandler extends WebformHandlerBase {
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     $elements = $this->getWebform()->getElementsInitializedAndFlattened();
-    $options = array_filter($elements, function ($e) {
-      return isset($e['#type']) && in_array($e['#type'], ['textfield']);
-    });
-    $field_options = array_map(function ($e, $k) {
-      return ($e['#title'] ?? $k) . ' (' . $k . ')';
-    }, $options, array_keys($options));
+    $options = [];
+    foreach ($elements as $key => $element) {
+      if (isset($element['#type']) && $element['#type'] === 'textfield') {
+        $title = $element['#title'] ?? $key;
+        $options[$key] = $title . ' (' . $key . ')';
+      }
+    }
 
     $form['origin_address_field'] = [
       '#type' => 'select',
       '#title' => $this->t('Origin address field'),
-      '#options' => $field_options,
+      '#options' => $options,
       '#default_value' => $this->configuration['origin_address_field'],
-      '#description' => $this->t('Select the origin address field.'),
+      '#description' => $this->t('Select the field containing the origin address.'),
       '#required' => TRUE,
     ];
 
     $form['destination_address_field'] = [
       '#type' => 'select',
       '#title' => $this->t('Destination address field'),
-      '#options' => $field_options,
+      '#options' => $options,
       '#default_value' => $this->configuration['destination_address_field'],
-      '#description' => $this->t('Select the destination address field.'),
+      '#description' => $this->t('Select the field containing the destination address.'),
       '#required' => TRUE,
     ];
 
     $form['distance_field'] = [
       '#type' => 'select',
       '#title' => $this->t('Distance field'),
-      '#options' => $field_options,
+      '#options' => $options,
       '#default_value' => $this->configuration['distance_field'],
-      '#description' => $this->t('Select the distance field.'),
+      '#description' => $this->t('Select the field to store the calculated distance.'),
       '#required' => TRUE,
     ];
 
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+    parent::submitConfigurationForm($form, $form_state);
     $this->configuration['origin_address_field'] = $form_state->getValue('origin_address_field');
     $this->configuration['destination_address_field'] = $form_state->getValue('destination_address_field');
     $this->configuration['distance_field'] = $form_state->getValue('distance_field');
   }
 
-  public function preSave(WebformSubmissionInterface $submission) {
+  /**
+   * {@inheritdoc}
+   */
+  public function alterForm(array &$form, FormStateInterface $form_state, WebformSubmissionInterface $webform_submission = NULL) {
     $api_key = \Drupal::config('custom_webform_handlers.settings')->get('google_maps_api_key');
-    if (!$api_key) {
-      \Drupal::logger('custom_webform_handlers')->error('No API key available at @time', ['@time' => date('Y-m-d H:i:s')]);
+    if (empty($api_key)) {
       return;
     }
 
-    $data = $submission->getData();
-    $origin = trim($data[$this->configuration['origin_address_field']] ?? '');
-    $destination = trim($data[$this->configuration['destination_address_field']] ?? '');
+    $form['#attached']['library'][] = 'custom_webform_handlers/distance_calculator';
+    $form['#attached']['drupalSettings']['custom_webform_handlers'] = [
+      'google_maps_api_key' => $api_key,
+      'saveUrl' => Url::fromRoute('custom_webform_handlers.save_distance')->toString(),
+      'csrfToken' => \Drupal::csrfToken()->get('custom_webform_handlers.save'),
+      'field_names' => [
+        'origin' => $this->configuration['origin_address_field'],
+        'destination' => $this->configuration['destination_address_field'],
+        'distance' => $this->configuration['distance_field'],
+      ],
+    ];
 
-    \Drupal::logger('custom_webform_handlers')->info('preSave triggered at @time: origin=@origin, destination=@dest', [
-      '@time' => date('Y-m-d H:i:s'),
-      '@origin' => $origin ?: 'empty',
-      '@dest' => $destination ?: 'empty',
-    ]);
-
-    if (empty($origin) || empty($destination)) {
-      \Drupal::logger('custom_webform_handlers')->warning('Empty addresses at @time: origin=@origin, dest=@dest', [
-        '@time' => date('Y-m-d H:i:s'),
-        '@origin' => $origin ?: 'empty',
-        '@dest' => $destination ?: 'empty',
-      ]);
-      return;
+    // Set autocomplete to 'on' for address fields to ensure Google suggestions display.
+    $origin_key = $this->configuration['origin_address_field'];
+    if (isset($form['elements'][$origin_key])) {
+      $form['elements'][$origin_key]['#attributes']['autocomplete'] = 'on';
     }
 
-    $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . http_build_query([
-      'origins' => $origin,
-      'destinations' => $destination,
-      'mode' => 'driving',
-      'units' => 'metric',
-      'key' => $api_key,
-    ]);
-
-    try {
-      $response = \Drupal::httpClient()->get($url);
-      $data = json_decode($response->getBody(), TRUE);
-
-      \Drupal::logger('custom_webform_handlers')->info('Distance Matrix API response at @time: status=@status, data=@data', [
-        '@time' => date('Y-m-d H:i:s'),
-        '@status' => $data['status'] ?? 'unknown',
-        '@data' => json_encode($data),
-      ]);
-
-      if ($data['status'] === 'OK' && isset($data['rows'][0]['elements'][0]['status']) && $data['rows'][0]['elements'][0]['status'] === 'OK') {
-        $distance = $data['rows'][0]['elements'][0]['distance']['text'];
-        $submission->setData([$this->configuration['distance_field'] => $distance]);
-        \Drupal::logger('custom_webform_handlers')->info('Distance set at @time: @distance', [
-          '@time' => date('Y-m-d H:i:s'),
-          '@distance' => $distance,
-        ]);
-      } else {
-        \Drupal::logger('custom_webform_handlers')->warning('Distance calculation failed at @time: status=@status, error=@error', [
-          '@time' => date('Y-m-d H:i:s'),
-          '@status' => $data['status'] ?? 'unknown',
-          '@error' => json_encode($data['rows'][0]['elements'][0] ?? 'no data'),
-        ]);
-      }
-    } catch (\Exception $e) {
-      \Drupal::logger('custom_webform_handlers')->error('Distance Matrix API request failed at @time: message=@message', [
-        '@time' => date('Y-m-d H:i:s'),
-        '@message' => $e->getMessage(),
-      ]);
+    $destination_key = $this->configuration['destination_address_field'];
+    if (isset($form['elements'][$destination_key])) {
+      $form['elements'][$destination_key]['#attributes']['autocomplete'] = 'on';
     }
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave(WebformSubmissionInterface $submission) {
+    $api_key = \Drupal::config('custom_webform_handlers.settings')->get('google_maps_api_key');
+    if (empty($api_key)) {
+      \Drupal::logger('custom_webform_handlers')->error('Google Maps API key is missing.');
+      return;
+    }
+
+    $origin = $submission->getElementData($this->configuration['origin_address_field']);
+    $destination = $submission->getElementData($this->configuration['destination_address_field']);
+
+    if ($origin && $destination) {
+      $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' . urlencode($origin) . '&destinations=' . urlencode($destination) . '&key=' . urlencode($api_key);
+
+      try {
+        $response = \Drupal::httpClient()->get($url);
+        $data = json_decode((string) $response->getBody(), TRUE);
+
+        if ($data['status'] === 'OK' && isset($data['rows'][0]['elements'][0]['distance']['value'])) {
+          $distance_km = $data['rows'][0]['elements'][0]['distance']['value'] / 1000;
+          $submission->setElementData($this->configuration['distance_field'], round($distance_km, 2) . ' km');
+        }
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('custom_webform_handlers')->error('Distance calculation failed: @message', ['@message' => $e->getMessage()]);
+      }
+    }
+  }
+
 }

@@ -1,56 +1,88 @@
 <?php
 
-  /**
-   * @file
-   * Custom Webform Handlers module.
-   */
+/**
+ * @file
+ * Custom Webform Handlers module.
+ */
 
-  /**
-   * Implements hook_page_attachments().
-   */
-  function custom_webform_handlers_page_attachments(array &$attachments) {
-    $route_name = \Drupal::routeMatch()->getRouteName();
-    if (strpos($route_name, 'webform_submission_') === 0) {
-      $config = \Drupal::config('custom_webform_handlers.settings');
-      $api_key = trim((string) $config->get('google_maps_api_key'));
+use Drupal\Core\Form\FormStateInterface;
 
-      if (!empty($api_key) && !isset($attachments['#attached']['html_head']['distance_calculator_google_maps'])) {
-        $attachments['#attached']['html_head'][] = [
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'script',
-            '#attributes' => [
-              'src' => "https://maps.googleapis.com/maps/api/js?key={$api_key}&libraries=places",
-              'async' => 'async',
-              'defer' => 'defer',
-            ],
-          ],
-          'distance_calculator_google_maps',
-        ];
-      }
+/**
+ * Implements hook_form_alter().
+ */
+function custom_webform_handlers_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  // Only target the specific webform
+  if ($form_id === 'webform_submission_we_add_form' || 
+      $form_id === 'webform_submission_we_edit_form' ||
+      strpos($form_id, 'webform_submission_we_') === 0) {
+    
+    // Get API key from configuration
+    $config = \Drupal::config('custom_webform_handlers.settings');
+    $api_key = $config->get('google_maps_api_key');
+    
+    if (empty($api_key)) {
+      \Drupal::logger('custom_webform_handlers')->warning('Google Maps API key is not configured.');
+      return;
     }
+    
+    // Attach library
+    $form['#attached']['library'][] = 'custom_webform_handlers/address_distance_calculator';
+    
+    // Pass settings directly to JavaScript with hardcoded field names
+    $form['#attached']['drupalSettings']['custom_webform_handlers'] = [
+      'google_maps_api_key' => $api_key,
+      'handler_config' => [
+        'origin_field' => 'origin_address',
+        'destination_field' => 'destination_address',
+        'distance_field' => 'calculated_distance',
+      ],
+      'auto_save' => TRUE,
+      'saveUrl' => '/custom_webform_handlers/save',
+      'csrfToken' => \Drupal::csrfToken()->get('custom_webform_handlers.save'),
+    ];
+    
+    \Drupal::logger('custom_webform_handlers')->info('Attached library to form: @form_id', [
+      '@form_id' => $form_id
+    ]);
   }
+}
 
-  /**
-   * Implements hook_form_alter().
-   */
-  function custom_webform_handlers_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-    if (strpos($form_id, 'webform_submission_') === 0) {
-      $form['#attached']['library'][] = 'custom_webform_handlers/address_autocomplete';
-      \Drupal::logger('custom_webform_handlers')->info('Attached address_autocomplete library to form: @form_id', ['@form_id' => $form_id]);
+/**
+ * Implements hook_webform_submission_presave().
+ */
+function custom_webform_handlers_webform_submission_presave($submission) {
+  // Only process for 'we' webform
+  if ($submission->getWebform()->id() !== 'we') {
+    return;
+  }
+  
+  $config = \Drupal::config('custom_webform_handlers.settings');
+  $api_key = $config->get('google_maps_api_key');
+  
+  if (!$api_key) {
+    \Drupal::logger('custom_webform_handlers')->error('Google Maps API key is missing.');
+    return;
+  }
+  
+  $origin = $submission->getElementData('origin_address');
+  $destination = $submission->getElementData('destination_address');
+  
+  if ($origin && $destination) {
+    $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' . urlencode($origin) . '&destinations=' . urlencode($destination) . '&key=' . $api_key;
+    
+    try {
+      $response = \Drupal::httpClient()->get($url);
+      $data = json_decode($response->getBody(), TRUE);
       
-      $api_key = \Drupal::config('custom_webform_handlers.settings')->get('google_maps_api_key');
-      if ($api_key) {
-        $form['#attached']['drupalSettings']['custom_webform_handlers'] = $form['#attached']['drupalSettings']['custom_webform_handlers'] ?? [];
-        $form['#attached']['drupalSettings']['custom_webform_handlers']['google_maps_api_key'] = $api_key;
-        $save_url = \Drupal\Core\Url::fromRoute('custom_webform_handlers.save')->toString();
-        $csrf_token = \Drupal::service('csrf_token')->get('custom_webform_handlers.save');
-        $form['#attached']['drupalSettings']['custom_webform_handlers']['saveUrl'] = $save_url;
-        $form['#attached']['drupalSettings']['custom_webform_handlers']['csrfToken'] = $csrf_token;
-        \Drupal::logger('custom_webform_handlers')->info('Google Maps API key and settings attached to drupalSettings: @key', ['@key' => substr($api_key, 0, 10) . '...']);
-      }
-      else {
-        \Drupal::logger('custom_webform_handlers')->error('Google Maps API key is missing in configuration.');
+      if ($data['status'] === 'OK' && !empty($data['rows'][0]['elements'][0]['distance'])) {
+        $distance = $data['rows'][0]['elements'][0]['distance']['value'] / 1000;
+        $submission->setElementData('calculated_distance', round($distance, 2) . ' km');
       }
     }
+    catch (\Exception $e) {
+      \Drupal::logger('custom_webform_handlers')->error('Distance calculation failed: @message', [
+        '@message' => $e->getMessage()
+      ]);
+    }
   }
+}
